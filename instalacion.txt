@@ -9,9 +9,9 @@ ifconfig | grep "Direc. inet:" >> pc_info.txt
 
 df -h | grep "/dev/sda" >> pc_info.txt
 
-add-apt-repository ppa:webupd8team/java
-apt-get update
-apt install oracle-java8-installer 
+add-apt-repository ppa:webupd8team/java -y
+apt-get update -y
+apt install oracle-java8-installer -y
 
 apt install openssh-server
 
@@ -32,35 +32,41 @@ wget https://downloads.lightbend.com/scala/2.11.12/scala-2.11.12.deb
 dpkg -i scala-2.11.12.deb
 
 echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
-sudo apt-get update
-sudo apt-get install sbt
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+apt update -y
+apt install sbt -y
 
 adduser --home /opt/hadoop hadoop
 
 # Configurar archivo de hosts
-148.204.63.24  Master	aulae1c8
-148.204.63.12  Slave1   aulae1b4
-148.204.63.27  Slave2   aulae1d3
-148.204.63.11  Slave3	aulae1b3
-148.204.63.26  Slave4	aulae1d2
-148.204.63.19  Slave5	aulae1c3
-148.204.63.25  Slave6	aulae1d1
-148.204.63.9   Slave7	aulae1b1
-148.204.63.21  Slave8	aulae1c4
-148.204.63.10  Slave9	aulae1b2
-148.204.63.17  Slave10	aulae1c1
-148.204.63.30  Slave11	aulae1d6
-148.204.63.23  Slave12	aulae1c7
-148.204.63.13  Slave13	aulae1b5
-148.204.63.18  Slave14  aulae1c2
+echo "148.204.63.24  Master  aulae1c8" >> /etc/hosts
+echo "148.204.63.12  Slave1  aulae1b4" >> /etc/hosts
+echo "148.204.63.27  Slave2  aulae1d3" >> /etc/hosts
+echo "148.204.63.11  Slave3  aulae1b3" >> /etc/hosts
+echo "148.204.63.26  Slave4  aulae1d2" >> /etc/hosts
+echo "148.204.63.19  Slave5  aulae1c3" >> /etc/hosts
+echo "148.204.63.25  Slave6  aulae1d1" >> /etc/hosts
+echo "148.204.63.9   Slave7  aulae1b1" >> /etc/hosts
+echo "148.204.63.21  Slave8  aulae1c4" >> /etc/hosts
+echo "148.204.63.10  Slave9  aulae1b2" >> /etc/hosts
+echo "148.204.63.17  Slave10  aulae1c1" >> /etc/hosts
+echo "148.204.63.30  Slave11  aulae1d6" >> /etc/hosts
+echo "148.204.63.23  Slave12  aulae1c7" >> /etc/hosts
+echo "148.204.63.13  Slave13  aulae1b5" >> /etc/hosts
+echo "148.204.63.18  Slave14  aulae1c2" >> /etc/hosts
 
-...
+# JAVA_HOME
+echo "export JAVA_HOME=/usr/lib/jvm/java-8-oracle" >> /opt/hadoop/.bashrc
 
 
 #Master
 ssh-keygen -t rsa -P "" -f /opt/hadoop/.ssh/id_rsa
 
+
+# Paso 1 hacer que cada máquina remota comparta su llave publica al master
+# ssh-copy-id hadoop@master
+
+# Paso 2 desde el maestro copiar known_hosts y authorized_keys a los esclavos
 
 for i in $( sec 1 13);
   do
