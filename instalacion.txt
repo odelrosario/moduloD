@@ -82,7 +82,7 @@ for i in $( sec 1 13);
   done
 
 
-GIT
+GIT Creación de repositorio local
 mkdir odelrosarioe
 cp instalacion.txt odelrosarioe/
 cd odelrosarioe
@@ -93,5 +93,10 @@ git commit -m "commit inicial"
 git remote add origin https://github.com/odelrosario/moduloD.git
 git push -u origin master
 
+Subir cambios
+git status
+git add instalacion.txt
+git commit -m "add git"
+git push
 
 
