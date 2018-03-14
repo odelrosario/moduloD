@@ -1,0 +1,85 @@
+# Instrucciones de instalacion (con root)
+
+#CPU
+lscpu | grep "CPU(s):" >> pc_info.txt
+
+free -lg | grep "Memoria" >> pc_info.txt
+
+ifconfig | grep "Direc. inet:" >> pc_info.txt
+
+df -h | grep "/dev/sda" >> pc_info.txt
+
+add-apt-repository ppa:webupd8team/java
+apt-get update
+apt install oracle-java8-installer 
+
+apt install openssh-server
+
+systemctl enable ssh.service
+
+ufw disable
+
+#http://www.apache.org/dyn/closer.cgi/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
+wget http://www-us.apache.org/dist/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
+
+#https://flink.apache.org/downloads.html#binaries
+wget http://www-us.apache.org/dist/flink/flink-1.4.2/flink-1.4.2-bin-scala_2.11.tgz
+
+#https://spark.apache.org/downloads.html
+wget http://www-us.apache.org/dist/spark/spark-2.1.2/spark-2.1.2-bin-hadoop2.7.tgz
+
+wget https://downloads.lightbend.com/scala/2.11.12/scala-2.11.12.deb
+dpkg -i scala-2.11.12.deb
+
+echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+sudo apt-get update
+sudo apt-get install sbt
+
+adduser --home /opt/hadoop hadoop
+
+# Configurar archivo de hosts
+148.204.63.24  Master	aulae1c8
+148.204.63.12  Slave1   aulae1b4
+148.204.63.27  Slave2   aulae1d3
+148.204.63.11  Slave3	aulae1b3
+148.204.63.26  Slave4	aulae1d2
+148.204.63.19  Slave5	aulae1c3
+148.204.63.25  Slave6	aulae1d1
+148.204.63.9   Slave7	aulae1b1
+148.204.63.21  Slave8	aulae1c4
+148.204.63.10  Slave9	aulae1b2
+148.204.63.17  Slave10	aulae1c1
+148.204.63.30  Slave11	aulae1d6
+148.204.63.23  Slave12	aulae1c7
+148.204.63.13  Slave13	aulae1b5
+148.204.63.18  Slave14  aulae1c2
+
+...
+
+
+#Master
+ssh-keygen -t rsa -P "" -f /opt/hadoop/.ssh/id_rsa
+
+
+for i in $( sec 1 13);
+  do
+     ssh-copy-id slave$i
+     ssh slave$1 cat /opt/hadoop/.ssh/id_rsa.pub >> /opt/hadoop/.ssh/authorized_keys
+  done
+
+for i in $( sec 1 13);
+  do
+     ssh cat /opt/hadoop/.ssh/authorized_keys >> /opt/hadoop/.ssh/authorized_keys
+  done
+
+
+
+
+for i in $( sec 1 13);
+  do
+    scp .ssh/* slave$i:/opt/hadoop/.ssh/
+  done
+
+
+
