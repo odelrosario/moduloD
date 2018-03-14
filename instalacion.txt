@@ -82,4 +82,16 @@ for i in $( sec 1 13);
   done
 
 
+GIT
+mkdir odelrosarioe
+cp instalacion.txt odelrosarioe/
+cd odelrosarioe
+git init
+git add instalacion.txt
+git config --global user.email "odelrosarioe@gmail.com"
+git commit -m "commit inicial"
+git remote add origin https://github.com/odelrosario/moduloD.git
+git push -u origin master
+
+
 
