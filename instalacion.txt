@@ -1,42 +1,8 @@
-# Instrucciones de instalacion (con root)
+# Script para ejecucion desde nodo MASTER
 
-#CPU
-lscpu | grep "CPU(s):" >> pc_info.txt
 
-free -lg | grep "Memoria" >> pc_info.txt
-
-ifconfig | grep "Direc. inet:" >> pc_info.txt
-
-df -h | grep "/dev/sda" >> pc_info.txt
-
-add-apt-repository ppa:webupd8team/java -y
-apt-get update -y
-apt install oracle-java8-installer -y
-
-apt install openssh-server
-
-systemctl enable ssh.service
-
-ufw disable
-
-#http://www.apache.org/dyn/closer.cgi/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
-wget http://www-us.apache.org/dist/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
-
-#https://flink.apache.org/downloads.html#binaries
-wget http://www-us.apache.org/dist/flink/flink-1.4.2/flink-1.4.2-bin-scala_2.11.tgz
-
-#https://spark.apache.org/downloads.html
-wget http://www-us.apache.org/dist/spark/spark-2.1.2/spark-2.1.2-bin-hadoop2.7.tgz
-
-wget https://downloads.lightbend.com/scala/2.11.12/scala-2.11.12.deb
-dpkg -i scala-2.11.12.deb
-
-echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
-apt update -y
-apt install sbt -y
-
-adduser --home /opt/hadoop hadoop
+# Instalacion con usuario ROOT
+# Configuracion de Master
 
 # Configurar archivo de hosts
 echo "148.204.63.24  Master  aulae1c8" >> /etc/hosts
@@ -55,39 +21,159 @@ echo "148.204.63.23  Slave12  aulae1c7" >> /etc/hosts
 echo "148.204.63.13  Slave13  aulae1b5" >> /etc/hosts
 echo "148.204.63.18  Slave14  aulae1c2" >> /etc/hosts
 
-# JAVA_HOME
+# Inventario CPU / Memoria / IP / Espacio en disco
+lscpu | grep "CPU(s):" >> /root/pc_info.txt
+free -lg | grep "Memoria" >> /root/pc_info.txt
+ifconfig | grep "Direc. inet:" >> /root/pc_info.txt
+df -h | grep "/dev/sda" >> /root/pc_info.txt
+
+#Instalacion Oracle JDK
+debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections
+debconf shared/accepted-oracle-license-v1-1 seen true | debconf-set-selections
+add-apt-repository ppa:webupd8team/java -y
+apt-get update -y
+apt install oracle-java8-installer -y
+
+# Instalacion OpenSSH Server
+apt install openssh-server -y
+systemctl enable ssh.service
+
+# Deshabilitar Firewall
+ufw disable
+ufw stop
+
+# Crear usuario hadoop y carpeta Home
+adduser --home /opt/hadoop --gecos "" --disabled-password hadoop
+
+# Crear directorios de programa
+mkdir /opt/spark
+chown hadoop:hadoop /opt/spark
+mkdir /opt/flink
+chown hadoop:hadoop /opt/flink
+mkdir /opt/tmp
+chown hadoop:hadoop /opt/tmp
+chmod 777
+
+# Descarga de hadoop-2.9.0.tar.gz
+cd /opt/hadoop
+#http://www.apache.org/dyn/closer.cgi/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
+wget http://www-us.apache.org/dist/hadoop/common/hadoop-2.9.0/hadoop-2.9.0.tar.gz
+
+# Descarga de flink-1.4.2-bin-scala_2.11.tgz
+#https://flink.apache.org/downloads.html#binaries
+wget http://www-us.apache.org/dist/flink/flink-1.4.2/flink-1.4.2-bin-scala_2.11.tgz
+
+# Descarga de spark-2.1.2-bin-hadoop2.7.tgz
+#https://spark.apache.org/downloads.html
+wget http://www-us.apache.org/dist/spark/spark-2.1.2/spark-2.1.2-bin-hadoop2.7.tgz
+
+# Descarga e instalacion de scala-2.11.12.deb
+wget https://downloads.lightbend.com/scala/2.11.12/scala-2.11.12.deb
+dpkg -i scala-2.11.12.deb
+
+
+# Instalacion de sbt
+echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+apt update -y
+apt install sbt -y
+
+
+
+
+# contenido .bashrc
+echo "## JAVA env variables" >> /opt/hadoop/.bashrc
 echo "export JAVA_HOME=/usr/lib/jvm/java-8-oracle" >> /opt/hadoop/.bashrc
+echo "export PATH=$JAVA_HOME/bi:$PATH" >> /opt/hadoop/.bashrc
+echo "export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar" >> /opt/hadoop/.bashrc
+echo " " >> /opt/hadoop/.bashrc
+echo "## HADOOP env variables" >> /opt/hadoop/.bashrc
+echo "export HADOOP_HOME=/opt/hadoop" >> /opt/hadoop/.bashrc
+echo "export HADOOP_COMMON_HOME=$HADOOP_HOME" >> /opt/hadoop/.bashrc
+echo "export HADOOP_HDFS_HOME=$HADOOP_HOME" >> /opt/hadoop/.bashrc
+echo "export HADOOP_MAPRED_HOME=$HADOOP_HOME" >> /opt/hadoop/.bashrc
+echo "export HADOOP_YARN_HOME=$HADOOP_HOME" >> /opt/hadoop/.bashrc
+echo "export HADOOP_OPTS=-Djava.library.path=$HADOOP_HOME/lib/native" >> /opt/hadoop/.bashrc
+echo "export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native" >> /opt/hadoop/.bashrc
+echo "export PATH=$HADOOP_HOME/sbin:$HADOOOP_HOME/bin:$PATH" >> /opt/hadoop/.bashrc
+echo " "
+echo "## SPARK env variables" >> /opt/hadoop/.bashrc
+echo "export SPARK_HOME=/opt/spark" >> /opt/hadoop/.bashrc
+echo "export SPARK_CONF_DIR=$SPARK_HOME/conf" >> /opt/hadoop/.bashrc
+echo "export PATH=$PATH:$SPARK_HOME/sbin:$SPARK_HOME/bin" >> /opt/hadoop/.bashrc
+echo " " >> /opt/hadoop/.bashrc
+echo "## FLINK env variables" >> /opt/hadoop/.bashrc
+echo "export FLINK_HOME=/opt/flink" >> /opt/hadoop/.bashrc
+echo "export FLINK_CONF_DIR=$FLINK_HOME/conf" >> /opt/hadoop/.bashrc
+echo "export PATH=$PATH:$FLINK_HOME/bin" >> /opt/hadoop/.bashrc
 
 
-#Master
+# Configuración de acceso sin password
+# Paso 1. Generar clave de Master
 ssh-keygen -t rsa -P "" -f /opt/hadoop/.ssh/id_rsa
 
-
-# Paso 1 hacer que cada máquina remota comparta su llave publica al master
+# Paso 2. Hacer que cada máquina remota comparta su llave publica al master
 # ssh-copy-id hadoop@master
-
-# Paso 2 desde el maestro copiar known_hosts y authorized_keys a los esclavos
-
 for i in $( sec 1 13);
   do
-     ssh-copy-id slave$i
-     ssh slave$1 cat /opt/hadoop/.ssh/id_rsa.pub >> /opt/hadoop/.ssh/authorized_keys
+    ssh slave$i "ssh-copy-id hadoop@master
   done
 
+# Paso 3. Desde el maestro copiar known_hosts y authorized_keys a los esclavos
+cd /opt/hadoop/.ssh
 for i in $( sec 1 13);
   do
-     ssh cat /opt/hadoop/.ssh/authorized_keys >> /opt/hadoop/.ssh/authorized_keys
-  done
-
-
-
-
-for i in $( sec 1 13);
-  do
-    scp .ssh/* slave$i:/opt/hadoop/.ssh/
+     scp known_hosts slave$i:/opt/hadoop/.ssh
+     scp authorized_keys slave$i:/opt/hadoop/.ssh
   done
 
 
+# Como usuario hadoop
+# Descompresion de archivos
+
+# Hadoop
+cd /opt/hadoop
+tar -xzf hadoop-2.9.0.tar.gz --directory /opt/hadoop
+cd /opt/hadoop/hadoop-2.9.0
+mv * /opt/hadoop
+cd /opt/hadoop
+rm -rf /opt/hadoop/hadoop-2.9.0
+
+# Flink
+tar -xzf flink-1.4.2-bin-scala_2.11.tgz --directory /opt/hadoop
+cd /opt/hadoop/flink-1.4.2
+mv * /opt/flink
+cd /opt/hadoop
+rm -rf /opt/hadoop/flink-1.4.2
+
+# Spark
+tar -xzf spark-2.3.0-bin-hadoop2.7.tgz --directory /opt/hadoop
+cd /opt/hadoop/spark-2.3.0-bin-hadoop2.7
+mv * /opt/spark
+cd /opt/hadoop
+rm -rf /opt/hadoop/spark-2.3.0-bin-hadoop2.7
+
+
+
+# Configuracion hadoop
+
+echo "slave1" > /opt/hadoop/etc/hadoop/slaves
+echo "Slave2" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave3" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave4" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave5" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave6" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave7" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave8" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave9" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave10" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave11" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave12" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave13" >> /opt/hadoop/etc/hadoop/slaves
+echo "Slave14" >> /opt/hadoop/etc/hadoop/slaves
+
+
+## Miscelaneo GIT
 GIT Creación de repositorio local
 mkdir odelrosarioe
 cp instalacion.txt odelrosarioe/
@@ -104,5 +190,8 @@ git status
 git add instalacion.txt
 git commit -m "add git"
 git push
+
+
+
 
 
